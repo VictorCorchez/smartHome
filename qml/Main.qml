@@ -20,6 +20,14 @@ App {
     Storage {
         id: deviceStorage
         databaseName: "deviceList"
+
+        Component.onCompleted:
+        {
+            for(let i = 0; i < deviceStorage.getValue("count"); i++)
+            {
+                devices.append(deviceStorage.getValue(i))
+            }
+        }
     }
 
     onInitTheme:
@@ -45,6 +53,13 @@ App {
         onAccepted: {
             if (deviceIndex >= 0) {
                 devices.remove(deviceIndex, 1)
+                deviceStorage.setValue("count", devices.count)
+                deviceStorage.clearValue(deviceIndex)
+                for(let i = deviceIndex; i < devices.count; i++)
+                {
+                    deviceStorage.setValue(i, devices.get(i))
+                }
+                deviceIndex = -1
             }
             close()
         }
@@ -92,14 +107,14 @@ App {
 
                                 width: (app.screenWidth / 2) - (flow.spacing / 2)
                                 height: width / 2
-                                drag.target: icon
+                                drag.target: deviceItem
                                 onPressAndHold: {
                                     removeDialog.deviceIndex = index
                                     removeDialog.open()
                                 }
 
                                 Rectangle {
-                                    id: icon
+                                    id: deviceItem
                                     width: delegateRoot.width
                                     height: delegateRoot.height
                                     anchors {
@@ -133,14 +148,14 @@ App {
 
                                     states: [
                                         State {
-                                            when: icon.Drag.active
+                                            when: deviceItem.Drag.active
                                             ParentChange {
-                                                target: icon
+                                                target: deviceItem
                                                 parent: flicky
                                             }
 
                                             AnchorChanges {
-                                                target: icon;
+                                                target: deviceItem;
                                                 anchors.horizontalCenter: undefined;
                                                 anchors.verticalCenter: undefined
                                             }
@@ -153,7 +168,13 @@ App {
 
                                     onEntered:
                                     {
-                                        devices.move(drag.source.visualIndex, delegateRoot.visualIndex, 1)
+                                        let from = drag.source.visualIndex
+                                        let to = delegateRoot.visualIndex
+                                        devices.move(from, to, 1)
+                                        for(let i = 0; i < devices.count; i++)
+                                        {
+                                            deviceStorage.setValue(i, devices.get(i))
+                                        }
                                     }
                                 }
                             }
@@ -183,7 +204,10 @@ App {
                         text: modelData.name
                         iconSource: modelData.icon
                         onSelected: {
-                            devices.append({ name: modelData.name, icon: modelData.icon })
+                            let item = { name: modelData.name, icon: modelData.icon }
+                            devices.append(item)
+                            deviceStorage.setValue("count", devices.count)
+                            deviceStorage.setValue(devices.count - 1, item)
                             tabBar.currentIndex = 0
                         }
                     }
