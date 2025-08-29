@@ -15,18 +15,23 @@ App {
     id: app
     ListModel {
         id: devices
+        Component.onCompleted:
+        {
+            dynamicRoles = true
+        }
     }
 
     Storage {
         id: deviceStorage
         databaseName: "deviceList"
 
-        Component.onCompleted:
+    }
+
+    Component.onCompleted:
+    {
+        for(let i = 0; i < deviceStorage.getValue("count"); i++)
         {
-            for(let i = 0; i < deviceStorage.getValue("count"); i++)
-            {
-                devices.append(deviceStorage.getValue(i))
-            }
+            devices.append(deviceStorage.getValue(i))
         }
     }
 
@@ -34,12 +39,15 @@ App {
     {
         Theme.colors.backgroundColor = "#191919"
         Theme.colors.secondaryBackgroundColor = "#191919"
+        Theme.colors.textColor = "white"
         Theme.tabBar.backgroundColor = "#191919"
         Theme.tabBar.showIcon = true
         Theme.dialog.backgroundColor = "#191919"
         Theme.dialog.titleColor = "lightgrey"
         Theme.listItem.backgroundColor = "#191919"
         Theme.listItem.textColor = "white"
+        Theme.navigationBar.backgroundColor = "black"
+        Theme.navigationBar.titleColor = "white"
     }
 
     Dialog {
@@ -66,114 +74,269 @@ App {
         onCanceled: close()
     }
 
+    Component {
+        id: deviceDetailPage
+
+        AppPage {
+            property int deviceIndex
+            property var device
+
+            title: device.name
+
+            Loader {
+                id: loader
+                anchors.centerIn: parent
+                sourceComponent: (device.name === "Bulb" ? bulbSettings :
+                                   device.name === "Thermostat" ? thermoSettings :
+                                   device.name === "Plug" ? plugSettings :
+                                   device.name === "Camera" ? cameraSettings : null)
+                onLoaded:
+                {
+                    item.device = device
+                }
+            }
+        }
+    }
+
+    // ---------- Per-type settings components ----------
+    Component {
+        id: bulbSettings
+        ColumnLayout {
+            property var device
+            property int deviceIndex
+            property int brightness: device.settings.brightness
+            spacing: dp(8)
+            AppText { text: "Brightness: " + brightness }
+            AppSlider {
+                from: 0; to: 100
+                value: brightness
+                onValueChanged:
+                {
+                    device.settings.brightness = value
+                    brightness = value
+                }
+            }
+        }
+    }
+
+    Component {
+        id: thermoSettings
+        ColumnLayout
+        {
+            property var device
+            property int deviceIndex
+            property int targetTemp: device.settings.targetTemp
+            spacing: dp(8)
+            AppText
+            {
+                Layout.alignment: Qt.AlignHCenter
+                text: "Current temperature: " + device.settings.currentTemp + "°C"
+            }
+            AppText
+            {
+                id: targetT
+                Layout.alignment: Qt.AlignHCenter
+                text: "Target temperature: " + targetTemp + "°C"
+            }
+            AppSlider
+            {
+                Layout.alignment: Qt.AlignHCenter
+                from: 18; to: 30; stepSize: 1
+                value: targetTemp
+                onValueChanged:
+                {
+                    device.settings.targetTemp = value
+                    targetTemp = value
+                }
+            }
+        }
+    }
+
+    Component {
+        id: plugSettings
+        ColumnLayout
+        {
+            property var device
+            property int deviceIndex
+            spacing: dp(8)
+            AppSwitch
+            {
+                id: switchX
+                Layout.alignment: Qt.AlignHCenter
+                checked: device.settings.status
+                onCheckedChanged:
+                {
+                    device.settings.status = checked
+                }
+            }
+            AppText
+            {
+                Layout.alignment: Qt.AlignHCenter
+                text: switchX.checked ? "On" : "Off"
+            }
+        }
+    }
+
+    Component
+    {
+        id: cameraSettings
+        ColumnLayout
+        {
+            property var device
+            property int deviceIndex
+            spacing: dp(8)
+            AppSwitch
+            {
+                id: switchX
+                Layout.alignment: Qt.AlignHCenter
+                checked: device.settings.status
+                onCheckedChanged:
+                {
+                    device.settings.status = checked
+                }
+            }
+            AppText
+            {
+                Layout.alignment: Qt.AlignHCenter
+                text: switchX.checked ? "Recording" : "Idle"
+            }
+        }
+    }
+
     TabControl
     {
         id: tabBar
-        tabPosition: QQC.TabBar.Footer
-        NavigationItem {
+        tabPosition: TabBar.Footer
+        NavigationItem
+        {
             iconType: IconType.home
             title: "Home"
 
-            Rectangle {
-                id: homeView
-                color: "black"
-
-                AppText {
-                    anchors.centerIn: parent
-                    visible: devices.count === 0
-                    text: "No devices added yet"
-                    color: "#888"
+            NavigationStack
+            {
+                id: stack
+                navigationBar.visible: depth > 1
+                initialPage: homeView
+                onDepthChanged:
+                {
+                    if (depth > 1)
+                    {
+                        tabBar.barHeight = 0
+                    }
+                    else
+                    {
+                        tabBar.barHeight = Theme.tabBar.height
+                    }
                 }
 
-                Flickable {
-                    id: flicky
-                    anchors.fill: parent
-                    contentWidth: parent.width
-                    contentHeight: flow.implicitHeight
+                AppPage
+                {
+                    id: homeView
+                    backgroundColor: "black"
+                    navigationBarHidden: true
 
-                    Flow {
-                        id: flow
-                        width: parent.width
-                        spacing: dp(8)
+                    AppText
+                    {
                         anchors.centerIn: parent
+                        visible: devices.count === 0
+                        text: "No devices added yet"
+                        color: "#888"
+                    }
 
-                        Repeater {
-                            id: deviceRepeater
-                            model: devices
-                            delegate: MouseArea {
-                                id: delegateRoot
+                    Flickable
+                    {
+                        id: flicky
+                        anchors.fill: parent
+                        contentWidth: parent.width
+                        contentHeight: flow.implicitHeight
 
-                                property int visualIndex: index
+                        Flow
+                        {
+                            id: flow
+                            width: parent.width
+                            spacing: dp(8)
+                            anchors.centerIn: parent
 
-                                width: (app.screenWidth / 2) - (flow.spacing / 2)
-                                height: width / 2
-                                drag.target: deviceItem
-                                onPressAndHold: {
-                                    removeDialog.deviceIndex = index
-                                    removeDialog.open()
-                                }
+                            Repeater {
+                                id: deviceRepeater
+                                model: devices
+                                delegate: MouseArea {
+                                    id: delegateRoot
 
-                                Rectangle {
-                                    id: deviceItem
-                                    width: delegateRoot.width
-                                    height: delegateRoot.height
-                                    anchors {
-                                        horizontalCenter: delegateRoot.horizontalCenter;
-                                        verticalCenter: delegateRoot.verticalCenter
+                                    property int visualIndex: index
+
+                                    width: (app.screenWidth / 2) - (flow.spacing / 2)
+                                    height: width / 2
+                                    drag.target: deviceItem
+                                    onPressAndHold: {
+                                        removeDialog.deviceIndex = index
+                                        removeDialog.open()
                                     }
-                                    radius: dp(15)
-                                    color: "#f0f0f0"
-                                    border.color: "#aaa"
-
-                                    ColumnLayout {
-                                        anchors.centerIn: parent
-                                        spacing: dp(4)
-                                        AppIcon {
-                                            Layout.alignment: Qt.AlignHCenter
-                                            iconType: model.icon
-                                            size: dp(32)
-                                            color: "black"
-                                        }
-                                        AppText {
-                                            Layout.alignment: Qt.AlignHCenter
-                                            text: model.name
-                                            font.pixelSize: sp(14)
-                                        }
+                                    onClicked: {
+                                        stack.push(deviceDetailPage, { deviceIndex: index, device: devices.get(index) })
                                     }
 
-                                    Drag.active: delegateRoot.drag.active
-                                    Drag.source: delegateRoot
-                                    Drag.hotSpot.x: width / 2
-                                    Drag.hotSpot.y: height / 2
+                                    Rectangle {
+                                        id: deviceItem
+                                        width: delegateRoot.width
+                                        height: delegateRoot.height
+                                        anchors {
+                                            horizontalCenter: delegateRoot.horizontalCenter;
+                                            verticalCenter: delegateRoot.verticalCenter
+                                        }
+                                        radius: dp(15)
+                                        color: "#151515"
+                                        border.color: "#aaa"
 
-                                    states: [
-                                        State {
-                                            when: deviceItem.Drag.active
-                                            ParentChange {
-                                                target: deviceItem
-                                                parent: flicky
+                                        ColumnLayout {
+                                            anchors.centerIn: parent
+                                            spacing: dp(4)
+                                            AppIcon {
+                                                Layout.alignment: Qt.AlignHCenter
+                                                iconType: model.icon
+                                                size: dp(32)
                                             }
-
-                                            AnchorChanges {
-                                                target: deviceItem;
-                                                anchors.horizontalCenter: undefined;
-                                                anchors.verticalCenter: undefined
+                                            AppText {
+                                                Layout.alignment: Qt.AlignHCenter
+                                                text: model.name
+                                                font.pixelSize: sp(14)
                                             }
                                         }
-                                    ]
-                                }
 
-                                DropArea {
-                                    anchors { fill: parent; margins: 15 }
+                                        Drag.active: delegateRoot.drag.active
+                                        Drag.source: delegateRoot
+                                        Drag.hotSpot.x: width / 2
+                                        Drag.hotSpot.y: height / 2
 
-                                    onEntered:
-                                    {
-                                        let from = drag.source.visualIndex
-                                        let to = delegateRoot.visualIndex
-                                        devices.move(from, to, 1)
-                                        for(let i = 0; i < devices.count; i++)
+                                        states: [
+                                            State {
+                                                when: deviceItem.Drag.active
+                                                ParentChange {
+                                                    target: deviceItem
+                                                    parent: flicky
+                                                }
+
+                                                AnchorChanges {
+                                                    target: deviceItem;
+                                                    anchors.horizontalCenter: undefined;
+                                                    anchors.verticalCenter: undefined
+                                                }
+                                            }
+                                        ]
+                                    }
+
+                                    DropArea {
+                                        anchors { fill: parent; margins: 15 }
+
+                                        onEntered: function(drag)
                                         {
-                                            deviceStorage.setValue(i, devices.get(i))
+                                            let from = drag.source.visualIndex
+                                            let to = delegateRoot.visualIndex
+                                            devices.move(from, to, 1)
+                                            for(let i = 0; i < devices.count; i++)
+                                            {
+                                                deviceStorage.setValue(i, devices.get(i))
+                                            }
                                         }
                                     }
                                 }
@@ -194,17 +357,17 @@ App {
                 AppListView {
                     anchors.fill: parent
                     model: [
-                        { name: qsTr("Plug"),       icon: IconType.plug },
-                        { name: qsTr("Bulb"),       icon: IconType.lightbulbo },
-                        { name: qsTr("Thermostat"), icon: "\uf2c9" },
-                        { name: qsTr("Camera"),     icon: IconType.videocamera }
+                        { name: qsTr("Plug"),       icon: IconType.plug,        settings:{status: false} },
+                        { name: qsTr("Bulb"),       icon: IconType.lightbulbo,  settings:{status: false, brightness: 100} },
+                        { name: qsTr("Thermostat"), icon: "\uf2c9",             settings:{status: false, currentTemp: 25, targetTemp: 20} },
+                        { name: qsTr("Camera"),     icon: IconType.videocamera, settings:{status: false} }
                     ]
 
                     delegate: SimpleRow {
                         text: modelData.name
                         iconSource: modelData.icon
                         onSelected: {
-                            let item = { name: modelData.name, icon: modelData.icon }
+                            let item = { name: modelData.name, icon: modelData.icon, settings: modelData.settings }
                             devices.append(item)
                             deviceStorage.setValue("count", devices.count)
                             deviceStorage.setValue(devices.count - 1, item)
