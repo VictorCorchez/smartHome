@@ -1,0 +1,75 @@
+/*!
+    \page devices.html
+    \brief All smart home device components.
+    \title Devices
+
+    This page links to individual QML types:
+    \list
+    \li \l Plug
+    \li \l Bulb
+    \li \l Thermostat
+    \li \l Camera
+    \endlist
+*/
+/*!
+    \qmltype Plug
+    \brief Represents a smart plug device.
+
+    The \c Plug component provides a UI to control a smart plug.
+    It shows whether the plug is turned on or off, and allows toggling its status.
+
+    \section1 Properties
+    \qmlproperty var device
+        The model object that contains this plug's information.
+        For example:
+        \code
+        { "name": "Plug", "icon": IconType.plug, "settings": { "status": false } }
+        \endcode
+*/
+/*!
+    \qmltype Bulb
+    \brief Represents a smart bulb device.
+
+    The \c Bulb component provides a UI to control a smart light bulb.
+    It supports toggling power and adjusting brightness.
+
+    \section1 Properties
+    \qmlproperty var device
+        The model object for this bulb.
+        Example:
+        \code
+        { "name": "Bulb", "icon": IconType.lightbulbo,
+          "settings": { "status": false, "brightness": 100 } }
+        \endcode
+*/
+/*!
+    \qmltype Thermostat
+    \brief Represents a thermostat device.
+
+    The \c Thermostat component lets the user view and change current
+    and target temperature values.
+
+    \section1 Properties
+    \qmlproperty var device
+        The model object for this thermostat.
+        Example:
+        \code
+        { "name": "Thermostat", "icon": "\uf2c9",
+          "settings": { "status": false, "currentTemp": 25, "targetTemp": 20 } }
+        \endcode
+*/
+/*!
+    \qmltype Camera
+    \brief Represents a camera device.
+
+    The \c Camera component shows camera status and allows enabling/disabling.
+
+    \section1 Properties
+    \qmlproperty var device
+        The model object for this camera.
+        Example:
+        \code
+        { "name": "Camera", "icon": IconType.videocamera,
+          "settings": { "status": false } }
+        \endcode
+*/

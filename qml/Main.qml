@@ -15,10 +15,6 @@ App {
     id: app
     ListModel {
         id: devices
-        Component.onCompleted:
-        {
-            dynamicRoles = true
-        }
     }
 
     Storage {
@@ -93,6 +89,7 @@ App {
                 onLoaded:
                 {
                     item.device = device
+                    item.deviceIndex = deviceIndex
                 }
             }
         }
@@ -206,7 +203,7 @@ App {
     TabControl
     {
         id: tabBar
-        tabPosition: TabBar.Footer
+        tabPosition: QQC.TabBar.Footer
         NavigationItem
         {
             iconType: IconType.home
@@ -249,11 +246,12 @@ App {
                         anchors.fill: parent
                         contentWidth: parent.width
                         contentHeight: flow.implicitHeight
+                        topMargin: dp(8)
 
                         Flow
                         {
                             id: flow
-                            width: parent.width
+                            width: parent.width - spacing
                             spacing: dp(8)
                             anchors.centerIn: parent
 
@@ -265,7 +263,7 @@ App {
 
                                     property int visualIndex: index
 
-                                    width: (app.screenWidth / 2) - (flow.spacing / 2)
+                                    width: (flow.width / 2) - (flow.spacing / 2)
                                     height: width / 2
                                     drag.target: deviceItem
                                     onPressAndHold: {

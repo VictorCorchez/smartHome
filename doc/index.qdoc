@@ -1,0 +1,20 @@
+/*!
+    \page index.html
+    \title SmartHome Project
+    \brief Welcome to the SmartHome documentation.
+
+    This project is a demo of a Smart Home application built with Felgo SDK.
+    Current features include:
+    \list
+    \li Device management with persistence
+    \li Home, Add, and Account views
+    \li Per-device detail/settings pages
+    \li Drag-and-drop reordering
+    \endlist
+
+    \section1 Contents
+    \list
+    \li \l{Tutorial}{App Tutorial}
+    \li \l{Devices}{Device Components}
+    \endlist
+*/

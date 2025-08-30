@@ -1,0 +1,40 @@
+# QDoc configuration for SmartHome project
+
+# Project info
+project                 = SmartHome
+description             = Documentation for the Smart Home Felgo project
+version                 = 1.0
+language                = QML
+
+# Output format
+outputdir               = doc/html
+outputformats           = HTML
+HTML.stylesheets        = custom.css
+HTML.headerstyles       = "  <link rel=\"stylesheet\" type=\"text/css\" href=\"style/custom.css\" />\n"
+
+# Index & navigation
+indexpage               = index.qdoc
+navigation              = true
+generateindex           = true
+
+# Location of sources (QML & C++)
+sourcedirs              = qml doc
+headers                 =
+sources                 = qml
+
+# Include paths if you use C++
+includes                =
+
+# QML module definition (important for QML types)
+qmltypes                =
+qmlmodules              =
+qmlimportpath           = qml
+
+# Example snippets (optional, can be shown in docs)
+#examples                = examples
+
+# Defines where images are found
+imagedirs               = doc/images
+
+# Enable private members (optional)
+# onlypublic            = true

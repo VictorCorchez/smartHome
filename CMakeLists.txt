@@ -52,6 +52,7 @@ qt_add_qml_module(appsmartHome
 #    QML_FILES ${QmlFiles}
 #    RESOURCES ${AssetsFiles}
     NO_RESOURCE_TARGET_PATH
+    RESOURCES custom.css
 )
 
 # NOTE: for PUBLISHING, perform the following steps:

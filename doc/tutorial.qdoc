@@ -1,0 +1,278 @@
+/*!
+\page tutorial.html
+\title Tutorial
+
+This tutorial explains how to build a basic SmartHome application in QML
+using a simple device model, navigation, and settings for each device.
+
+The dark theme and platform-independent UI were done by design,
+trying to emulate the way such an app looks similiar regardless of platform.
+
+\section1 Introduction
+
+The SmartHome app demonstrates:
+\list
+  \li Using a model to represent devices.
+  \li Displaying devices in a responsive flow layout.
+  \li Navigating to per-device pages with independent settings.
+  \li Storing device state in the model.
+\endlist
+
+\section1 Navigation
+
+The navigation through the app is done with a \c TabControl which displays a TabBar at the bottom.
+There are 3 navigation items: Home, Add and Account each with their view. In the home view if a device is selected,
+the tab bar is being hidden and navigation is done with the navigation bar at the top,
+which displays the current page's name and a back button to return to the main view. This type of implementation
+was chosen based on an existing smart home app trying to emulate the same behavior.
+
+\code
+TabControl
+{
+    id: tabBar
+    tabPosition: QQC.TabBar.Footer
+    NavigationItem
+    {
+        iconType: IconType.home
+        title: "Home"
+    //[...]
+    }
+}
+\endcode
+
+The home view has it's own navigation stack that enables to show each device type details page and return to main view.
+
+\code
+NavigationStack
+{
+    id: stack
+    navigationBar.visible: depth > 1
+    initialPage: homeView
+    onDepthChanged:
+    {
+        if (depth > 1)
+        {
+            tabBar.barHeight = 0
+        }
+        else
+        {
+            tabBar.barHeight = Theme.tabBar.height
+        }
+    }
+    //[...]
+}
+\endcode
+
+\section1 Add View
+
+The app currently supports 4 types of devices: bulb, plug, thermostat and camera.
+These are described in a JavaScript array used as a model in the add view.
+Each device is represented by an object with a \c name, \c icon, and \c settings.
+
+\code
+property var devices: [
+    { name: qsTr("Plug"),       icon: IconType.plug,         settings: { "status": false } },
+    { name: qsTr("Bulb"),       icon: IconType.lightbulbo,   settings: { "status": false, "brightness": 100 } },
+    { name: qsTr("Thermostat"), icon: "\uf2c9",              settings: { "status": false, "currentTemp": 25, "targetTemp": 20 } },
+    { name: qsTr("Camera"),     icon: IconType.videocamera,  settings: { "status": false } }
+]
+\endcode
+
+\section1 Home View
+
+The home view is responsible to show the owner's devices. If there are no devices added yet,
+an explainatory text is shown.
+
+\code
+AppText
+{
+    anchors.centerIn: parent
+    visible: devices.count === 0
+    text: "No devices added yet"
+    color: "#888"
+}
+\endcode
+
+If there were items added in previous sessions they are being loaded from \c Storage at startup
+in the \c devices model and shown in the home view.
+
+\code
+App
+{
+    ListModel {
+        id: devices
+    }
+
+    Storage {
+        id: deviceStorage
+        databaseName: "deviceList"
+
+    }
+
+    Component.onCompleted:
+    {
+        for(let i = 0; i < deviceStorage.getValue("count"); i++)
+        {
+            devices.append(deviceStorage.getValue(i))
+        }
+    }
+    //[...]
+}
+\endcode
+
+The devices are displayed in a \c Flow so that items wrap across multiple rows.
+
+\code
+Flow
+{
+    id: flow
+    width: parent.width - spacing
+    spacing: dp(8)
+    anchors.centerIn: parent
+
+    Repeater {
+        id: deviceRepeater
+        model: devices
+    //[...]
+    }
+}
+\endcode
+
+All the shown devices support drag and drop to rearrange. The order is also saved in storage, so each time
+you reload the app, the devices are shown in the previous order.
+The logic:
+\list
+  \li Each item can be dragged using \c DragHandler.
+  \li When the drag ends, the item’s center position is checked.
+  \li The \c Repeater refreshes to reflect the new order.
+  \li The model array is updated to move the device and the new order is saved in \c Storage
+\endlist
+
+To enable the drag and drop feature the \c delegate is a \c MouseArea so that it handles the drop events.
+The  \c MouseArea also handles the \c onClicked event which opens the device specific details page
+as well as \c onPressAndHold that opens the remove device dialog.
+
+\code
+    MouseArea {
+        id: delegateRoot
+
+        property int visualIndex: index
+
+        width: (flow.width / 2) - (flow.spacing / 2)
+        height: width / 2
+        drag.target: deviceItem
+        onPressAndHold: {
+            removeDialog.deviceIndex = index
+            removeDialog.open()
+        }
+        onClicked: {
+            stack.push(deviceDetailPage, { deviceIndex: index, device: devices.get(index) })
+        }
+
+        //[...]
+        DropArea {
+            anchors { fill: parent; margins: 15 }
+
+            onEntered: function(drag)
+            {
+                let from = drag.source.visualIndex
+                let to = delegateRoot.visualIndex
+                devices.move(from, to, 1)
+                for(let i = 0; i < devices.count; i++)
+                {
+                    deviceStorage.setValue(i, devices.get(i))
+                }
+            }
+        }
+    }
+\endcode
+
+The visual representation of each device is described in a \c Rectangle as child of the \c MouseArea.
+The \c Drag element and \c states specify how the item behave when being dragged
+
+\code
+    Rectangle {
+        id: deviceItem
+        width: delegateRoot.width
+        height: delegateRoot.height
+
+        //[...]
+
+        Drag.active: delegateRoot.drag.active
+        Drag.source: delegateRoot
+        Drag.hotSpot.x: width / 2
+        Drag.hotSpot.y: height / 2
+
+        states: [
+            State {
+                when: deviceItem.Drag.active
+                ParentChange {
+                    target: deviceItem
+                    parent: flicky
+                }
+
+                AnchorChanges {
+                    target: deviceItem;
+                    anchors.horizontalCenter: undefined;
+                    anchors.verticalCenter: undefined
+                }
+            }
+        ]
+    }
+\endcode
+
+\section1 Device Pages
+
+Each device has its own page with independent settings. To load each type of page an \c AppPage with a \c Loader
+is being used. The \c AppPage is being used to set the title of the current page in the navigation bar.
+The selected \c device and \c deviceIndex are passed as property after the detail page has been loaded.
+
+\code
+Component {
+    id: deviceDetailPage
+
+    AppPage {
+        property int deviceIndex
+        property var device
+
+        title: device.name
+
+        Loader {
+            id: loader
+            anchors.centerIn: parent
+            sourceComponent: (device.name === "Bulb" ? bulbSettings :
+                               device.name === "Thermostat" ? thermoSettings :
+                               device.name === "Plug" ? plugSettings :
+                               device.name === "Camera" ? cameraSettings : null)
+            onLoaded:
+            {
+                item.device = device
+                item.deviceIndex = deviceIndex
+            }
+        }
+    }
+}
+\endcode
+
+Each device details page displays it's specific set of settings like target/current temperature for the thermostat
+or brightness for the light bulb, etc. These can be extended with multiple details and configurations.
+Disclaimer: settings are not saved in \c Storage at the moment.
+
+\section1 Account View
+
+This view shows details about the user account and details.
+
+
+\section1 Conclusion
+
+We created a simple SmartHome app with:
+\list
+  \li A flexible device model.
+  \li A responsive home view with wrapped items.
+  \li Per-device settings pages.
+  \li Conditional navigation controls.
+\endlist
+
+This serves as a foundation for more advanced features like
+drag-and-drop reordering, persistent storage, or network communication.
+*/
