@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE QDOCINDEX>
+<INDEX url="" title="Documentation for the Smart Home Felgo project" version="1.0" project="SmartHome">
+    <namespace name="" status="active" access="public" module="smarthome">
+        <qmlclass name="Bulb" href="qml-bulb.html" status="active" access="public" location="devices.qdoc" filepath="E:/workspace/Qt/smartHome/doc/devices.qdoc" lineno="29" documented="true" title="Bulb" fulltitle="Bulb" subtitle="" brief="Represents a smart bulb device">
+            <contents name="properties" title="Properties" level="1"/>
+        </qmlclass>
+        <qmlclass name="Camera" href="qml-camera.html" status="active" access="public" location="devices.qdoc" filepath="E:/workspace/Qt/smartHome/doc/devices.qdoc" lineno="61" documented="true" title="Camera" fulltitle="Camera" subtitle="" brief="Represents a camera device">
+            <contents name="properties" title="Properties" level="1"/>
+        </qmlclass>
+        <page name="devices.html" href="devices.html" status="active" location="devices.qdoc" filepath="E:/workspace/Qt/smartHome/doc/devices.qdoc" lineno="1" documented="true" subtype="page" title="Devices" fulltitle="Devices" subtitle="" brief="All smart home device components"/>
+        <qmlclass name="Plug" href="qml-plug.html" status="active" access="public" location="devices.qdoc" filepath="E:/workspace/Qt/smartHome/doc/devices.qdoc" lineno="14" documented="true" title="Plug" fulltitle="Plug" subtitle="" brief="Represents a smart plug device">
+            <contents name="properties" title="Properties" level="1"/>
+        </qmlclass>
+        <page name="index.html" href="index.html" status="active" location="index.qdoc" filepath="E:/workspace/Qt/smartHome/doc/index.qdoc" lineno="1" documented="true" subtype="page" title="SmartHome Project" fulltitle="SmartHome Project" subtitle="" brief="Welcome to the SmartHome documentation">
+            <contents name="contents" title="Contents" level="1"/>
+        </page>
+        <qmlclass name="Thermostat" href="qml-thermostat.html" status="active" access="public" location="devices.qdoc" filepath="E:/workspace/Qt/smartHome/doc/devices.qdoc" lineno="45" documented="true" title="Thermostat" fulltitle="Thermostat" subtitle="" brief="Represents a thermostat device">
+            <contents name="properties" title="Properties" level="1"/>
+        </qmlclass>
+        <page name="tutorial.html" href="tutorial.html" status="active" location="tutorial.qdoc" filepath="E:/workspace/Qt/smartHome/doc/tutorial.qdoc" lineno="1" documented="true" subtype="page" title="Tutorial" fulltitle="Tutorial" subtitle="">
+            <contents name="introduction" title="Introduction" level="1"/>
+            <contents name="navigation" title="Navigation" level="1"/>
+            <contents name="add-view" title="Add View" level="1"/>
+            <contents name="home-view" title="Home View" level="1"/>
+            <contents name="device-pages" title="Device Pages" level="1"/>
+            <contents name="account-view" title="Account View" level="1"/>
+            <contents name="conclusion" title="Conclusion" level="1"/>
+        </page>
+    </namespace>
+</INDEX>

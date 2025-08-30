@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+<!-- tutorial.qdoc -->
+  <title>Tutorial | SmartHome 1.0</title>
+  <link rel="stylesheet" type="text/css" href="style/custom.css" />
+</head>
+<body>
+<div class="sidebar">
+<div class="toc">
+<h3 id="toc">Contents</h3>
+<ul>
+<li class="level1"><a href="#introduction">Introduction</a></li>
+<li class="level1"><a href="#navigation">Navigation</a></li>
+<li class="level1"><a href="#add-view">Add View</a></li>
+<li class="level1"><a href="#home-view">Home View</a></li>
+<li class="level1"><a href="#device-pages">Device Pages</a></li>
+<li class="level1"><a href="#account-view">Account View</a></li>
+<li class="level1"><a href="#conclusion">Conclusion</a></li>
+</ul>
+</div>
+<div class="sidebar-content" id="sidebar-content"></div></div>
+<h1 class="title">Tutorial</h1>
+<!-- $$$tutorial.html-description -->
+<div class="descr" id="details">
+<p>This tutorial explains how to build a basic SmartHome application in QML using a simple device model, navigation, and settings for each device.</p>
+<p>The dark theme and platform-independent UI were done by design, trying to emulate the way such an app looks similiar regardless of platform.</p>
+<h2 id="introduction">Introduction</h2>
+<p>The SmartHome app demonstrates:</p>
+<ul>
+<li>Using a model to represent devices.</li>
+<li>Displaying devices in a responsive flow layout.</li>
+<li>Navigating to per-device pages with independent settings.</li>
+<li>Storing device state in the model.</li>
+</ul>
+<h2 id="navigation">Navigation</h2>
+<p>The navigation through the app is done with a <code translate="no">TabControl</code> which displays a TabBar at the bottom. There are 3 navigation items: Home, Add and Account each with their view. In the home view if a device is selected, the tab bar is being hidden and navigation is done with the navigation bar at the top, which displays the current page's name and a back button to return to the main view. This type of implementation was chosen based on an existing smart home app trying to emulate the same behavior.</p>
+<pre class="cpp" translate="no"><span class="type">TabControl</span>
+{
+    <span class="name">id</span>: <span class="name">tabBar</span>
+    <span class="name">tabPosition</span>: <span class="name">QQC</span>.<span class="name">TabBar</span>.<span class="name">Footer</span>
+    <span class="type">NavigationItem</span>
+    {
+        <span class="name">iconType</span>: <span class="name">IconType</span>.<span class="name">home</span>
+        <span class="name">title</span>: <span class="string">&quot;Home&quot;</span>
+    <span class="comment">//[...]</span>
+    }
+}</pre>
+<p>The home view has it's own navigation stack that enables to show each device type details page and return to main view.</p>
+<pre class="cpp" translate="no"><span class="type">NavigationStack</span>
+{
+    <span class="name">id</span>: <span class="name">stack</span>
+    <span class="name">navigationBar</span>.visible: <span class="name">depth</span> <span class="operator">&gt;</span> <span class="number">1</span>
+    <span class="name">initialPage</span>: <span class="name">homeView</span>
+    <span class="name">onDepthChanged</span>:
+    {
+        <span class="keyword">if</span> (<span class="name">depth</span> <span class="operator">&gt;</span> <span class="number">1</span>)
+        {
+            <span class="name">tabBar</span>.<span class="name">barHeight</span> <span class="operator">=</span> <span class="number">0</span>
+        }
+        <span class="keyword">else</span>
+        {
+            <span class="name">tabBar</span>.<span class="name">barHeight</span> <span class="operator">=</span> <span class="name">Theme</span>.<span class="name">tabBar</span>.<span class="name">height</span>
+        }
+    }
+    <span class="comment">//[...]</span>
+}</pre>
+<h2 id="add-view">Add View</h2>
+<p>The app currently supports 4 types of devices: bulb, plug, thermostat and camera. These are described in a JavaScript array used as a model in the add view. Each device is represented by an object with a <code translate="no">name</code>, <code translate="no">icon</code>, and <code translate="no">settings</code>.</p>
+<pre class="cpp" translate="no">property var devices: <span class="operator">[</span>
+    { name: qsTr(<span class="string">&quot;Plug&quot;</span>)<span class="operator">,</span>       icon: IconType<span class="operator">.</span>plug<span class="operator">,</span>         settings: { <span class="string">&quot;status&quot;</span>: <span class="keyword">false</span> } }<span class="operator">,</span>
+    { name: qsTr(<span class="string">&quot;Bulb&quot;</span>)<span class="operator">,</span>       icon: IconType<span class="operator">.</span>lightbulbo<span class="operator">,</span>   settings: { <span class="string">&quot;status&quot;</span>: <span class="keyword">false</span><span class="operator">,</span> <span class="string">&quot;brightness&quot;</span>: <span class="number">100</span> } }<span class="operator">,</span>
+    { name: qsTr(<span class="string">&quot;Thermostat&quot;</span>)<span class="operator">,</span> icon: <span class="string">&quot;\uf2c9&quot;</span><span class="operator">,</span>              settings: { <span class="string">&quot;status&quot;</span>: <span class="keyword">false</span><span class="operator">,</span> <span class="string">&quot;currentTemp&quot;</span>: <span class="number">25</span><span class="operator">,</span> <span class="string">&quot;targetTemp&quot;</span>: <span class="number">20</span> } }<span class="operator">,</span>
+    { name: qsTr(<span class="string">&quot;Camera&quot;</span>)<span class="operator">,</span>     icon: IconType<span class="operator">.</span>videocamera<span class="operator">,</span>  settings: { <span class="string">&quot;status&quot;</span>: <span class="keyword">false</span> } }
+<span class="operator">]</span></pre>
+<h2 id="home-view">Home View</h2>
+<p>The home view is responsible to show the owner's devices. If there are no devices added yet, an explainatory text is shown.</p>
+<pre class="cpp" translate="no"><span class="type">AppText</span>
+{
+    <span class="name">anchors</span>.centerIn: <span class="name">parent</span>
+    <span class="name">visible</span>: <span class="name">devices</span>.<span class="name">count</span> <span class="operator">===</span> <span class="number">0</span>
+    <span class="name">text</span>: <span class="string">&quot;No devices added yet&quot;</span>
+    <span class="name">color</span>: <span class="string">&quot;#888&quot;</span>
+}</pre>
+<p>If there were items added in previous sessions they are being loaded from <code translate="no">Storage</code> at startup in the <code translate="no">devices</code> model and shown in the home view.</p>
+<pre class="cpp" translate="no"><span class="type">App</span>
+{
+    <span class="type">ListModel</span> {
+        <span class="name">id</span>: <span class="name">devices</span>
+    }
+
+    <span class="type">Storage</span> {
+        <span class="name">id</span>: <span class="name">deviceStorage</span>
+        <span class="name">databaseName</span>: <span class="string">&quot;deviceList&quot;</span>
+
+    }
+
+    <span class="name">Component</span>.onCompleted:
+    {
+        <span class="keyword">for</span>(let i = 0; <span class="name">i</span> <span class="operator">&lt;</span> <span class="name">deviceStorage</span>.<span class="name">getValue</span>(<span class="string">&quot;count&quot;</span>); i++)
+        {
+            <span class="name">devices</span>.<span class="name">append</span>(<span class="name">deviceStorage</span>.<span class="name">getValue</span>(<span class="name">i</span>))
+        }
+    }
+    <span class="comment">//[...]</span>
+}</pre>
+<p>The devices are displayed in a <code translate="no">Flow</code> so that items wrap across multiple rows.</p>
+<pre class="cpp" translate="no"><span class="type">Flow</span>
+{
+    <span class="name">id</span>: <span class="name">flow</span>
+    <span class="name">width</span>: <span class="name">parent</span>.<span class="name">width</span> <span class="operator">-</span> <span class="name">spacing</span>
+    <span class="name">spacing</span>: <span class="name">dp</span>(<span class="number">8</span>)
+    <span class="name">anchors</span>.centerIn: <span class="name">parent</span>
+
+    <span class="type">Repeater</span> {
+        <span class="name">id</span>: <span class="name">deviceRepeater</span>
+        <span class="name">model</span>: <span class="name">devices</span>
+    <span class="comment">//[...]</span>
+    }
+}</pre>
+<p>All the shown devices support drag and drop to rearrange. The order is also saved in storage, so each time you reload the app, the devices are shown in the previous order. The logic:</p>
+<ul>
+<li>Each item can be dragged using <code translate="no">DragHandler</code>.</li>
+<li>When the drag ends, the item’s center position is checked.</li>
+<li>The <code translate="no">Repeater</code> refreshes to reflect the new order.</li>
+<li>The model array is updated to move the device and the new order is saved in <code translate="no">Storage</code></li>
+</ul>
+<p>To enable the drag and drop feature the <code translate="no">delegate</code> is a <code translate="no">MouseArea</code> so that it handles the drop events. The <code translate="no">MouseArea</code> also handles the <code translate="no">onClicked</code> event which opens the device specific details page as well as <code translate="no">onPressAndHold</code> that opens the remove device dialog.</p>
+<pre class="cpp" translate="no"><span class="type">MouseArea</span> {
+    <span class="name">id</span>: <span class="name">delegateRoot</span>
+
+    property <span class="type">int</span> <span class="name">visualIndex</span>: <span class="name">index</span>
+
+    <span class="name">width</span>: (<span class="name">flow</span>.<span class="name">width</span> <span class="operator">/</span> <span class="number">2</span>) <span class="operator">-</span> (<span class="name">flow</span>.<span class="name">spacing</span> <span class="operator">/</span> <span class="number">2</span>)
+    <span class="name">height</span>: <span class="name">width</span> <span class="operator">/</span> <span class="number">2</span>
+    <span class="name">drag</span>.target: <span class="name">deviceItem</span>
+    <span class="name">onPressAndHold</span>: {
+        <span class="name">removeDialog</span>.<span class="name">deviceIndex</span> <span class="operator">=</span> <span class="name">index</span>
+        <span class="name">removeDialog</span>.<span class="name">open</span>()
+    }
+    <span class="name">onClicked</span>: {
+        <span class="name">stack</span>.<span class="name">push</span>(<span class="name">deviceDetailPage</span>, { deviceIndex: <span class="name">index</span>, device: <span class="name">devices</span>.<span class="name">get</span>(<span class="name">index</span>) })
+    }
+
+    <span class="comment">//[...]</span>
+    <span class="type">DropArea</span> {
+        <span class="type">anchors</span> { <span class="name">fill</span>: <span class="name">parent</span>; <span class="name">margins</span>: <span class="number">15</span> }
+
+        <span class="name">onEntered</span>: <span class="keyword">function</span>(drag)
+        {
+            let from = <span class="name">drag</span>.<span class="name">source</span>.<span class="name">visualIndex</span>
+            let to = <span class="name">delegateRoot</span>.<span class="name">visualIndex</span>
+            <span class="name">devices</span>.<span class="name">move</span>(<span class="name">from</span>, <span class="name">to</span>, <span class="number">1</span>)
+            <span class="keyword">for</span>(let i = 0; <span class="name">i</span> <span class="operator">&lt;</span> <span class="name">devices</span>.<span class="name">count</span>; i++)
+            {
+                <span class="name">deviceStorage</span>.<span class="name">setValue</span>(<span class="name">i</span>, <span class="name">devices</span>.<span class="name">get</span>(<span class="name">i</span>))
+            }
+        }
+    }
+}</pre>
+<p>The visual representation of each device is described in a <code translate="no">Rectangle</code> as child of the <code translate="no">MouseArea</code>. The <code translate="no">Drag</code> element and <code translate="no">states</code> specify how the item behave when being dragged</p>
+<pre class="cpp" translate="no"><span class="type">Rectangle</span> {
+    <span class="name">id</span>: <span class="name">deviceItem</span>
+    <span class="name">width</span>: <span class="name">delegateRoot</span>.<span class="name">width</span>
+    <span class="name">height</span>: <span class="name">delegateRoot</span>.<span class="name">height</span>
+
+    <span class="comment">//[...]</span>
+
+    <span class="name">Drag</span>.active: <span class="name">delegateRoot</span>.<span class="name">drag</span>.<span class="name">active</span>
+    <span class="name">Drag</span>.source: <span class="name">delegateRoot</span>
+    <span class="name">Drag</span>.hotSpot.x: <span class="name">width</span> <span class="operator">/</span> <span class="number">2</span>
+    <span class="name">Drag</span>.hotSpot.y: <span class="name">height</span> <span class="operator">/</span> <span class="number">2</span>
+
+    <span class="name">states</span>: [
+        <span class="type">State</span> {
+            <span class="name">when</span>: <span class="name">deviceItem</span>.<span class="name">Drag</span>.<span class="name">active</span>
+            <span class="type">ParentChange</span> {
+                <span class="name">target</span>: <span class="name">deviceItem</span>
+                <span class="name">parent</span>: <span class="name">flicky</span>
+            }
+
+            <span class="type">AnchorChanges</span> {
+                <span class="name">target</span>: <span class="name">deviceItem</span>;
+                <span class="name">anchors</span>.horizontalCenter: <span class="name">undefined</span>;
+                <span class="name">anchors</span>.verticalCenter: <span class="name">undefined</span>
+            }
+        }
+    ]
+}</pre>
+<h2 id="device-pages">Device Pages</h2>
+<p>Each device has its own page with independent settings. To load each type of page an <code translate="no">AppPage</code> with a <code translate="no">Loader</code> is being used. The <code translate="no">AppPage</code> is being used to set the title of the current page in the navigation bar. The selected <code translate="no">device</code> and <code translate="no">deviceIndex</code> are passed as property after the detail page has been loaded.</p>
+<pre class="cpp" translate="no"><span class="type">Component</span> {
+    <span class="name">id</span>: <span class="name">deviceDetailPage</span>
+
+    <span class="type">AppPage</span> {
+        property <span class="type">int</span> <span class="name">deviceIndex</span>
+        property <span class="type">var</span> <span class="name">device</span>
+
+        <span class="name">title</span>: <span class="name">device</span>.<span class="name">name</span>
+
+        <span class="type">Loader</span> {
+            <span class="name">id</span>: <span class="name">loader</span>
+            <span class="name">anchors</span>.centerIn: <span class="name">parent</span>
+            <span class="name">sourceComponent</span>: (<span class="name">device</span>.<span class="name">name</span> <span class="operator">===</span> <span class="string">&quot;Bulb&quot;</span> ? <span class="name">bulbSettings</span> :
+                               <span class="name">device</span>.<span class="name">name</span> <span class="operator">===</span> <span class="string">&quot;Thermostat&quot;</span> ? <span class="name">thermoSettings</span> :
+                               <span class="name">device</span>.<span class="name">name</span> <span class="operator">===</span> <span class="string">&quot;Plug&quot;</span> ? <span class="name">plugSettings</span> :
+                               <span class="name">device</span>.<span class="name">name</span> <span class="operator">===</span> <span class="string">&quot;Camera&quot;</span> ? <span class="name">cameraSettings</span> : <span class="number">null</span>)
+            <span class="name">onLoaded</span>:
+            {
+                <span class="name">item</span>.<span class="name">device</span> <span class="operator">=</span> <span class="name">device</span>
+                <span class="name">item</span>.<span class="name">deviceIndex</span> <span class="operator">=</span> <span class="name">deviceIndex</span>
+            }
+        }
+    }
+}</pre>
+<p>Each device details page displays it's specific set of settings like target/current temperature for the thermostat or brightness for the light bulb, etc. These can be extended with multiple details and configurations. Disclaimer: settings are not saved in <code translate="no">Storage</code> at the moment.</p>
+<h2 id="account-view">Account View</h2>
+<p>This view shows details about the user account and details.</p>
+<h2 id="conclusion">Conclusion</h2>
+<p>We created a simple SmartHome app with:</p>
+<ul>
+<li>A flexible device model.</li>
+<li>A responsive home view with wrapped items.</li>
+<li>Per-device settings pages.</li>
+<li>Conditional navigation controls.</li>
+</ul>
+<p>This serves as a foundation for more advanced features like drag-and-drop reordering, persistent storage, or network communication.</p>
+</div>
+<!-- @@@tutorial.html -->
+</body>
+</html>
